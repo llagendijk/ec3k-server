@@ -9,164 +9,180 @@ import select
 import json
 import argparse
 
+
 class TcpSocket:
-        
-        def __init__(self, my_queue, address, port):
-                self.want_stop = True
-                self.queue = my_queue
-                self.address = address
-                self.port = port
-		self.socket_list = []
-                
-        def start(self):
-                # ""Start the TCP server""
-                assert self.want_stop
-                self.want_stop = False
 
-                # setup socket
-                print "Start listening on %s port %d" %(self.address, self.port)
+    def __init__(self, my_queue, address, port):
+        self.want_stop = True
+        self.queue = my_queue
+        self.address = address
+        self.port = port
+        self.socket_list = []
+
+    def start(self):
+        # ""Start the TCP server""
+        assert self.want_stop
+        self.want_stop = False
+
+        # setup socket
+        print("Start listening on %s port %d" % (self.address, self.port))
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.sock.bind((self.address, self.port))
+            self.sock.listen(5)
+        except:
+            raise IOError("Failed to setup TCP server")
+
+        self.threads = []
+        tcpServer_thread = threading.Thread(target=self._process_data)
+        self.threads.append(tcpServer_thread)
+        tcpServer_thread.start()
+
+    def stop(self):
+        # ""Stop the tcp-server thread""
+        assert not self.want_stop == True
+        self.want_stop = True
+
+        # stop threads
+        for thread in self.threads:
+            thread.join()
+
+        # close outgoing sockets, but we are not interested in exceptions
+        try:
+            for s in self.socket_list:
+                s.close()
+                self.socket_list.remove(s)
+                # close listener socket
+                self.sock.close()
+        except:
+            pass
+
+    def _output_string(self, status):
+
+        # copy relevant values from status so we can dump as json
+        return json.dumps(
+            {
+                "id": hex(status.id)[2:],
+                "data": {
+                    "time_total": status.time_total,
+                    "time_on": status.time_on,
+                    "energy": status.energy,
+                    "power_current": status.power_current,
+                    "power_max": status.power_max,
+                    "reset_counter": status.reset_counter
+                }
+            },
+            indent=2) + "\n"
+
+    def _process_data(self):
+
+        self.read_list = [self.sock]
+        while self.want_stop == False:
+
+            # we do not want select to block
+            # TODO: read and discard received input	on socket
+            readable, writable, errored = select.select(self.read_list,
+                                                        self.socket_list,
+                                                        self.socket_list, 0)
+
+            for s in readable:
+                client_socket, address = self.sock.accept()
+                self.socket_list.append(client_socket)
+                print("New connection from ", address)
+
+            for e in errored:
                 try:
-                        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                        self.sock.bind((self.address, self.port ))
-                        self.sock.listen(5)
+                    self.socket_list.remove(e)
+                    e.close()
+
                 except:
-                        raise IOError("Failed to setup TCP server")
-                
-                self.threads = []
-                tcpServer_thread = threading.Thread(target=self._process_data)
-                self.threads.append(tcpServer_thread)
-		tcpServer_thread.start()
+                    pass
 
+            # get item from queue
+            try:
+                # we use the wait on the queue to avoid busy looping
+                item = self.queue.get(True, 1)
+                output_string = self._output_string(item)
+                # print output_string
+                for w in writable:
+                    try:
+                        w.send(output_string)
+                    except:
 
-        def stop(self):
-                # ""Stop the tcp-server thread""
-                assert not self.want_stop == True
-                self.want_stop = True
-                
-                # stop threads
-                for thread in self.threads:
-                        thread.join()
-        
-                # close outgoing sockets, but we are not interested in exceptions
-                try:
-                        for s in self.socket_list:
-                                s.close()
-                                self.socket_list.remove(s)
-                                # close listener socket        
-                                self.sock.close()
-                except:
-                        pass
-
-        def _output_string(self, status):
-
-                # copy relevant values from status so we can dump as json
-                return json.dumps(
-                {
-                        "id" : hex(status.id)[2:],
-                        "data" : {
-                                "time_total" : status.time_total,
-                                "time_on" : status.time_on,
-                                "energy" : status.energy,
-                                "power_current" : status.power_current,
-                                "power_max" : status.power_max,
-                                "reset_counter" : status.reset_counter
-                        }
-                }, indent = 2) + "\n"
-                
-        def _process_data(self):
-                
-                self.read_list = [self.sock]
-                while self.want_stop == False:
-                        
-                        # we do not want select to block
-			# TODO: read and discard received input	on socket
-                        readable, writable, errored = select.select(self.read_list, self.socket_list, self.socket_list, 0)
-
-                        for s in readable:
-                                client_socket, address = self.sock.accept()
-                                self.socket_list.append(client_socket)
-                                print("New connection from", address)
-
-                       
-                        for e in errored:
-                                try:
-                                        self.socket_list.remove(e)
-                                        e.close()
-                                        
-                                except:
-                                        pass
-                                
-                        # get item from queue
+                        print(
+                            "Cannot write to socket, closing this connection.\n "
+                        )
+                        self.socket_list.remove(w)
                         try:
-                                # we use the wait on the queue to avoid busy looping
-                                item = self.queue.get(True, 1)
-                                output_string = self._output_string(item)
-                                # print output_string 
-                                for w in writable:
-                                        try:
-                                                w.send(output_string)
-                                        except :
-                                                
-						print "Cannot write to socket, closing this connection.\n "
-                                                self.socket_list.remove(w)  
-                                                try: 
-                                                        w.close()
-                                                except:
-							print "Exception on socket cleanup!\n"
-                                                        pass
-				self.queue.task_done()
-                        except Queue.Empty:
-                                pass
-
+                            w.close()
+                        except:
+                            print("Exception on socket cleanup!\n")
+                            pass
+                self.queue.task_done()
+            except Queue.Empty:
+                pass
 
 
 want_stop = False
 
+
 def handler(signum, frame):
-	global want_stop
-	print "Signal %d caught! Stopping..." % (signum,)
-	want_stop = True
+    global want_stop
+    print("Signal %d caught! Stopping..." % (signum,))
+    want_stop = True
+
 
 def main():
-	signal.signal(signal.SIGTERM, handler)
-	signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGTERM, handler)
+    signal.signal(signal.SIGINT, handler)
 
-        cmd_line = argparse.ArgumentParser(description = 'Ec3k tcp json server.')
-        cmd_line.add_argument('-f', '--frequency', type = float, default = 868.320e6)
-        cmd_line.add_argument('-a', '--address', type = str, default = '127.0.0.1')
-        cmd_line.add_argument('-p', '--port', type = int, default = 3001)
-        
-        args = cmd_line.parse_args()
+    cmd_line = argparse.ArgumentParser(description='Ec3k tcp json server.')
+    cmd_line.add_argument('-f', '--frequency', type=float, default=868.320e6)
+    cmd_line.add_argument('-a', '--address', type=str, default='127.0.0.1')
+    cmd_line.add_argument('-p', '--port', type=int, default=3001)
+    cmd_line.add_argument('-r', '--rescan', dest='rescan', action='store_true')
+    cmd_line.add_argument('-s', '--seconds', type=int, default=300)
+    cmd_line.set_defaults(rescan=False)
+    args = cmd_line.parse_args()
 
-        
-        
-	def callback(state):
-		queue.put(state)
+    print('Starting, settings are:')
+    print('  frequency = ' + str(args.frequency))
+    print('  address = ' + args.address)
+    print('  port = ' + str(args.port))
+    print('  rescan= ' + str(args.rescan))
+    print('  interval (sec) = ' + str(args.seconds))
 
-	my_ec3k = ec3k.EnergyCount3K(callback = callback, freq=args.frequency)
-        queue = Queue.Queue()
-        my_tcpServer = TcpSocket(queue, args.address, args.port)
+    def callback(state):
+        queue.put(state)
 
-	my_ec3k.start()
+    my_ec3k = ec3k.EnergyCount3K(callback=callback, freq=args.frequency)
+    queue = Queue.Queue()
+    my_tcpServer = TcpSocket(queue, args.address, args.port)
 
-        try:
-                my_tcpServer.start()
-        except IOError, e:
-                print e
+    my_ec3k.start()
+
+    try:
+        my_tcpServer.start()
+    except IOError as e:
+        print(e)
+        my_ec3k.stop()
+        queue.join
+        return
+
+    else:
+        while not want_stop:
+            print("Noise level: %.1f dB" % (my_ec3k.noise_level,))
+            if args.rescan:
+                print('Start a rescan....')
                 my_ec3k.stop()
-                queue.join
-                return
+                my_ec3k.start()
+            time.sleep(args.seconds)
 
-        else:
-	        while not want_stop:
-		        time.sleep(600)
-		        print "Noise level: %.1f dB" % (my_ec3k.noise_level,)
+        my_ec3k.stop()
+        queue.join()
+        my_tcpServer.stop()
 
-	        my_ec3k.stop()
-                queue.join()
-                my_tcpServer.stop()
 
 if __name__ == '__main__':
-	main()
-                        
+    main()

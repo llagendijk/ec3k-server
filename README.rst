@@ -3,8 +3,8 @@ Software receiver server for EnergyCount 3000
 
 This server allows you to receive and decode radio transmissions from
 EnergyCount 3000 energy loggers using a RTL-SDR supported radio receiver
-and the ec3k module and send the information as json telegrams to users
-ilike Domoticz over a TCP connection.
+and the ec3k module and send the information as json telegrams to consumers
+like Domoticz over a TCP connection.
 
 Usage:
 ------
@@ -24,6 +24,10 @@ optional arguments:
 
         -p PORT, --port PORT
 
+        -r, --rescan
+
+        -s SECONDS, --seconds SECONDS
+
 
 The -f/--frequency argument is used to set the radio frequency
                 (default: 868.320e6)
@@ -33,6 +37,11 @@ The -a/--address options are used to set the listen address for the server
 
 The -p/--port options are used to set the listen port for the server
                 (default 3001)
+
+The -r/ --rescan option forces the receiver to rescan for the right level
+
+
+The -s/--seconds option sets the interval for the resan or level printing as appropriate
 
 
 Requirements
