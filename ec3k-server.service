@@ -3,8 +3,7 @@ Description=EC3k server
 After=basic.target
 [Service]
 Type=simple
-EnvironmentFile=-/etc/sysconfig/EC3k-server
-ExecStart=/usr/bin/ec3k-server -a 127.0.0.1 -p 3001 -r -s 300
+ExecStart=/usr/bin/ec3k-server
 Restart=on-abort
 #User=ec3k
 StandardOutput=syslog

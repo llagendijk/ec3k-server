@@ -47,7 +47,10 @@ The -s/--seconds option sets the interval for the resan or level printing as app
 Requirements
 ------------
 This server requuires the ec3k module which in its turn has its requirements.
-See: https://github.com/avian2/ec3k.
+See: https://github.com/avian2/ec3k as well as:
+- setuptools
+- configparser
+- argparser
 
 Known problems
 --------------
