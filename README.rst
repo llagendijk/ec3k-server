@@ -10,22 +10,19 @@ the output from the local server.
 
 Usage:
 ------
-'''
-# ec3k-server --help
+$ ec3k-server --help
 usage: ec3k-server [-h] [-c CONFIGFILE]
 
 Ec3k json server.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c CONFIGFILE, 
-  --configfile CONFIGFILE default: /etc/ec3k-server.conf
-'''
+  -c CONFIGFILE, --configfile CONFIGFILE
+                        override default configfile (/etc/ec3k-server.conf)
+
 
 The configuration file and the systemd unitfile are installed by 
-python setup.py install.
-
-All configuration is done in the config file.
+python setup.py install. All configuration is done in the config file.
 
 
 Requirements
