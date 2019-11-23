@@ -5,7 +5,7 @@ This server allows you to receive and decode radio transmissions from
 EnergyCount 3000 energy loggers using a RTL-SDR supported radio receiver
 and the ec3k module and send the information as json telegrams to consumers
 like Domoticz over a TCP connection and/or a MQTT-server.
-Data can also be retrieved from a remote ec3k-server to be consolidated in
+Data can be retrieved from a local SDR or from a remote ec3k-server to be consolidated in
 the output from the local server.
 
 Usage:
@@ -28,7 +28,7 @@ All configuration is done in the config file.
 
 Requirements
 ------------
-This server requuires the ec3k module which in its turn has its requirements.
+This server requires the ec3k module which in its turn has its requirements.
 See: https://github.com/avian2/ec3k as well as:
 - setuptools
 - configparser
