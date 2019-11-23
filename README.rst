@@ -4,44 +4,26 @@ Software receiver server for EnergyCount 3000
 This server allows you to receive and decode radio transmissions from
 EnergyCount 3000 energy loggers using a RTL-SDR supported radio receiver
 and the ec3k module and send the information as json telegrams to consumers
-like Domoticz over a TCP connection.
+like Domoticz over a TCP connection and/or a MQTT-server.
+Data can also be retrieved from a remote ec3k-server to be consolidated in
+the output from the local server.
 
 Usage:
 ------
 # ec3k-server --help
+usage: ec3k-server [-h] [-c CONFIGFILE]
 
-usage: ec3k-server [-h] [-f FREQUENCY] [-a ADDRESS] [-p PORT]
-
-Ec3k tcp json server.
+Ec3k json server.
 
 optional arguments:
+  -h, --help            show this help message and exit
+  -c CONFIGFILE, --configfile CONFIGFILE
+                        configfile, default: /etc/ec3k-server.conf
 
-        -h, --help   show this help message and exit
+The configuration file and the systemd unitfile are  installed by 
+python setup.py install.
 
-        -f FREQUENCY, --frequency FREQUENCY
-
-        -a ADDRESS, --address ADDRESS
-
-        -p PORT, --port PORT
-
-        -r, --rescan
-
-        -s SECONDS, --seconds SECONDS
-
-
-The -f/--frequency argument is used to set the radio frequency
-                (default: 868.320e6)
-
-The -a/--address options are used to set the listen address for the server
-                (default 127.0.0.1)
-
-The -p/--port options are used to set the listen port for the server
-                (default 3001)
-
-The -r/ --rescan option forces the receiver to rescan for the right level
-
-
-The -s/--seconds option sets the interval for the resan or level printing as appropriate
+All configuration is done in the config file.
 
 
 Requirements
@@ -75,7 +57,7 @@ License
 
 ec3k-server, the server software:
 
-Copyright (C) 2016 Louis Lagendijk <louis.lagendijk@gmail.com>
+Copyright (C) 2019 Louis Lagendijk <louis.lagendijk@gmail.com>
 
 Protocol reverse engineering: http://forum.jeelabs.net/comment/4020
 
