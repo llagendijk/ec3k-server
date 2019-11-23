@@ -10,6 +10,7 @@ the output from the local server.
 
 Usage:
 ------
+'''
 # ec3k-server --help
 usage: ec3k-server [-h] [-c CONFIGFILE]
 
@@ -17,10 +18,11 @@ Ec3k json server.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c CONFIGFILE, --configfile CONFIGFILE
-                        configfile, default: /etc/ec3k-server.conf
+  -c CONFIGFILE, 
+  --configfile CONFIGFILE default: /etc/ec3k-server.conf
+'''
 
-The configuration file and the systemd unitfile are  installed by 
+The configuration file and the systemd unitfile are installed by 
 python setup.py install.
 
 All configuration is done in the config file.
@@ -30,9 +32,11 @@ Requirements
 ------------
 This server requires the ec3k module which in its turn has its requirements.
 See: https://github.com/avian2/ec3k as well as:
+
 - setuptools
 - configparser
 - argparser
+- paho-mqtt
 
 Known problems
 --------------
