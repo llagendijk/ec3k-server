@@ -121,7 +121,7 @@ def main():
                           '--configfile',
                           type=str,
                           default='/etc/ec3k-server.conf',
-                          help="configfile, default: /etc/ec3k-server.conf")
+                          help="override default configfile (/etc/ec3k-server.conf)")
     args = cmd_line.parse_args()
 
     config = configparser.ConfigParser()
