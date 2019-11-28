@@ -1,6 +1,6 @@
 [Unit]
 Description=EC3k server
-After=basic.target
+After=network-online.target
 [Service]
 Type=simple
 ExecStart=/usr/bin/ec3k-server
