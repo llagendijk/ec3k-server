@@ -22,7 +22,6 @@ class RemoteClient:
         self.chunks = []
         self.logger = logging.getLogger(name)
 
-
     def _remoteConnect(self):
         # setup incoming socket
         try:
@@ -37,12 +36,11 @@ class RemoteClient:
             self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 2)
         except socket.error as e:
             self.logger.error("Failed to connect: {}".format(e))
-            time.sleep(5)
+            self.sock = None
         except Exception:
             self.logger.error("Failed to setup remote listener: {}".format(
                 traceback.format_exc()))
             self.sock = None
-            time.sleep(5)
 
 
     def start(self):
@@ -116,14 +114,14 @@ class RemoteClient:
                 self.logger.debug("message sent")
                 del self.chunks[0:i + 1]
                 break
-            else:
-                if i > 1 and self.chunks[i] == "{":
-                    # start of a new message, delete and resync
-                    self.logger.info(
-                        "Received incomplete message, delete it and continue ({} lines: {})"
-                        .format(i + 1, self.chunks[0:i + 1]))
-                    del self.chunks[0:i]
-                    break
+            elif self.chunks[i] == "{" and i > 1:
+                # start of a new message, end of previous message not found
+                # delete and resync
+                self.logger.info(
+                    "Received incomplete message, delete it and continue ({} lines: {})"
+                    .format(i + 1, self.chunks[0:i + 1]))
+                del self.chunks[0:i]
+                break
 
 
     def _process_data(self):
@@ -139,6 +137,7 @@ class RemoteClient:
                 startTime = time.time()
             if self.sock is None:
                 self._remoteConnect()
+                time.sleep(1)
             else:
                 readable, writable, errored = select.select([self.sock], [],
                                                             [self.sock], 1)
@@ -149,8 +148,8 @@ class RemoteClient:
                         self.logger.info(
                             "Socket to remote is closed, will reconnect")
                         try:
-                            s.close()
                             self.sock = None
+                            s.close()
                         except:
                             continue
                     self.logger.debug("Received message from remote")
